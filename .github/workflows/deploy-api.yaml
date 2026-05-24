@@ -88,7 +88,7 @@ jobs:
     steps:
       - uses: webfactory/ssh-agent@v0.9.0
         with:
-          ssh-private-key: \${{ secrets.EA2_SSH_PRIVATE_KEY }}
+          ssh-private-key: ${{ secrets.EA2_SSH_PRIVATE_KEY }}
 
       - name: 1 · SSH al servidor K3S
         run: ssh -o StrictHostKeyChecking=accept-new "ubuntu@\${{ inputs.k3s-server-public-ip }}" 'echo ok'
