@@ -107,3 +107,26 @@ jobs:
 
       - name: Verificar pods
         run: ssh -o StrictHostKeyChecking=accept-new "ubuntu@${{ inputs.k3s-server-public-ip }}" 'sudo k3s kubectl get pods -o wide'
+      - name: Copiar k8s/ al servidor y aplicar
+        run: |
+          set -euo pipefail
+          test -d k8s || { echo "::error::Falta carpeta k8s/ en la raíz del repo"; exit 1; }
+          ssh -o StrictHostKeyChecking=accept-new "ubuntu@${{ inputs.k3s-server-public-ip }}" 'sudo rm -rf /tmp/k8s-deploy'
+          scp -o StrictHostKeyChecking=accept-new -r k8s "ubuntu@${{ inputs.k3s-server-public-ip }}:/tmp/k8s-deploy"
+          ssh -o StrictHostKeyChecking=accept-new "ubuntu@${{ inputs.k3s-server-public-ip }}" \
+            'sudo k3s kubectl apply -f /tmp/k8s-deploy/'
+
+      - name: Validar rollout y aplicar rollback si falla
+        run: |
+          ssh -o StrictHostKeyChecking=accept-new "ubuntu@${{ inputs.k3s-server-public-ip }}" '
+            echo "Verificando el estado del despliegue..."
+            if ! sudo k3s kubectl rollout status deployment/demo-api --timeout=3m; then
+              echo "❌ El despliegue falló. Ejecutando rollback inmediatamente..."
+              sudo k3s kubectl rollout undo deployment/demo-api
+              exit 1
+            fi
+            echo "✅ Despliegue exitoso."
+          '
+
+      - name: Verificar pods
+        run: ssh -o StrictHostKeyChecking=accept-new "ubuntu@${{ inputs.k3s-server-public-ip }}" 'sudo k3s kubectl get pods -o wide'
