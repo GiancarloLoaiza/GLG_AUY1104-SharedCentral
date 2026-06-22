@@ -54,9 +54,7 @@ jobs:
         run: npm install
 
       - name: 3 · Ejecutar tests
-        run: |
-          echo "Forzando intencionalmente un fallo de prueba para QA"
-          exit 1
+        run: npm test
 
   build-and-push:
     name: Build and push Docker image
